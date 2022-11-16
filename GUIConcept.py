@@ -1,6 +1,8 @@
 from tkinter import *
 from PIL import ImageTk, Image
-from tkinter import filedialog
+#from tkinter import filedialog
+import button_functions
+from functools import partial
 
 
 window = Tk()
@@ -30,8 +32,7 @@ menu = OptionMenu(frame2, variable, "one", "two", "three")
 inner_menu = OptionMenu(menu, variable, "one1", "two2", "three3")
 menu.config(width=35)
 
-isOpen = False
-#makes file selector appear and disappear when selected/deselected
+'''
 def file_type_button():
     global isOpen
     #drop down is placeholder for eventual file type selector
@@ -50,16 +51,15 @@ def file_button():
     text_box = Text(frame2, width = 35, height = 1)
     text_box.insert("end-1c", filename)
     text_box.pack()
-
-
+'''
 
 file_type_btn = ImageTk.PhotoImage(Image.open('assets/file.png').resize((pixels_x, pixels_y)))
 file_btn = ImageTk.PhotoImage(Image.open('assets/harddrive.png').resize((pixels_x, pixels_y)))
 
 
-button1 = Button(frame1, image = file_type_btn, command = file_type_button,
+button1 = Button(frame1, image = file_type_btn, command = partial(button_functions.file_type_button, menu),
 borderwidth = 0)
-button2 = Button(frame1, image = file_btn, command = file_button, borderwidth = 0)
+button2 = Button(frame1, image = file_btn, command = partial(button_functions.file_button, frame2), borderwidth = 0)
 
 button1.pack()
 button2.pack()
