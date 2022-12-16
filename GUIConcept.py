@@ -57,8 +57,7 @@ file_type_btn = ImageTk.PhotoImage(Image.open('assets/file.png').resize((pixels_
 file_btn = ImageTk.PhotoImage(Image.open('assets/harddrive.png').resize((pixels_x, pixels_y)))
 
 
-button1 = Button(frame1, image = file_type_btn, command = partial(button_functions.file_type_button, menu),
-borderwidth = 0)
+button1 = Button(frame1, image = file_type_btn, command = partial(button_functions.file_type_button, menu), borderwidth = 0)
 button2 = Button(frame1, image = file_btn, command = partial(button_functions.file_button, frame2), borderwidth = 0)
 
 button1.pack()

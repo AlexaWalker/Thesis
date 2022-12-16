@@ -14,11 +14,28 @@ def file_type_button(menu):
         menu.pack_forget()
         isOpen=False
     
-
+fileOpen = False
 #open file explorer
 def file_button(frame2):
-    filename = filedialog.askopenfilename()
-    #print(filename)
-    text_box = Text(frame2, width = 35, height = 1)
-    text_box.insert("end-1c", filename)
-    text_box.pack()
+    global fileOpen
+    global text_box
+    if (isOpen==False):
+        if (fileOpen == False):
+            filename = filedialog.askopenfilename()
+            text_box = Text(frame2, width = 34, height = 1)
+            text_box.insert("end-1c", filename)
+            text_box.pack()
+            _open(filename)
+            fileOpen = True
+
+        elif (fileOpen == True):
+            text_box.pack_forget()
+            filename = filedialog.askopenfilename()
+            text_box = Text(frame2, width = 34, height = 1)
+            text_box.insert("end-1c", filename)
+            text_box.pack()
+            _open(filename)
+            #fileOpen = False
+
+    
+
