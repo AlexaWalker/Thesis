@@ -35,7 +35,7 @@ class application:
         frame1 = self.frame1 = Frame(master=self.parent, width=50, height=720, bg="red")
         frame2 = self.frame2 = Frame(master=self.parent, width=250, height=720, bg="yellow")
         frame3 = self.frame3 = Frame(master=self.parent, width=780, height=500, bg="blue")
-        frame4 = self.frame4 = Frame(master=self.parent, width=780, height=220, bg="purple")
+        frame4 = self.frame4 = Frame(master=self.parent, width=800, height=220, bg="purple")
 
         #image sizes for buttons
         pixels_x = 50
@@ -59,21 +59,36 @@ class application:
 
     #Function to create the textbox for the hex/ascii views
     def create_view(self):
-        self.viewText = Text(self.parent, height=500, width=780)
+        viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
+        scrollbar = self.scrollbar = Scrollbar(master=self.frame3)
 
     #Function to add widgets to the display
     def create_layout(self):
         self.parent.geometry("1080x720")
         self.parent.resizable(0, 0)
 
-        self.frame1.grid(row=0, column=0, rowspan=3, columnspan=1, sticky=NS)
-        self.frame2.grid(row=0,column=1, rowspan=3, columnspan=2, sticky=NS)
-        self.viewText.grid(row=0, column=3, rowspan=2, columnspan=3, sticky=NS)
-        #self.frame3.grid(row=0, column=3, rowspan=2, columnspan=3, sticky=NS)
-        self.frame4.grid(row=2, column=3, rowspan=1, columnspan=3, sticky=NS)
+        self.frame1.grid(row=0, column=0, rowspan=3, columnspan=1, sticky='NS')
+        self.frame2.grid(row=0,column=1, rowspan=3, columnspan=2, sticky='NS')
+        self.frame3.grid(row=0, column=3, rowspan=2, columnspan=3, sticky='W')
+        self.frame4.grid(row=2, column=3, rowspan=1, columnspan=3, sticky='NS')
+
+        self.frame3.grid_propagate(False)
+        self.frame4.grid_propagate(False)
+
+        self.viewText.grid(row=0, column=0, sticky='NSEW')
+        self.viewText.grid_propagate(True)
+        self.frame3.grid_columnconfigure(0, weight=1)
+        self.frame3.grid_rowconfigure(0, weight=1)
+
+        self.scrollbar.grid(row=0, column=1, sticky='NS')
+
+        self.viewText.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.viewText.yview)
+
 
         self.button1.pack()
         self.button2.pack()
+
 
     #Function sets up text box and displays the file in hex-code and ASCII
     def show_block(self):
@@ -82,9 +97,7 @@ class application:
             return
         with open(self.filename, "rb") as file:
             file.seek(0, os.SEEK_SET)
-            block = file.read(512)  #Reads file up to specified number of bytes
-            print(len(block))
-            print("Done")
+            block = file.read(4096)  #Reads file up to specified number of bytes
 
         rows = [block[i:i + BLOCK_WIDTH] for i in range(0, len(block), BLOCK_WIDTH)] #make rows of BLOCK_WIDTH number of bytes
         for row in rows:
@@ -148,18 +161,18 @@ class application:
         if (ISOPEN==False):
             if (FILEOPEN == False):
                 filename = filedialog.askopenfilename()
-                text_box = Text(frame2, width = 34, height = 1)
-                text_box.insert("end-1c", filename)
-                text_box.pack()
+                #text_box = Text(frame2, width = 34, height = 1)
+                #text_box.insert("end-1c", filename)
+                #text_box.pack()
                 self._open(filename)
                 fileOpen = True
 
             elif (FILEOPEN == True):
-                text_box.pack_forget()
+                #text_box.pack_forget()
                 filename = filedialog.askopenfilename()
-                text_box = Text(frame2, width = 34, height = 1)
-                text_box.insert("end-1c", filename)
-                text_box.pack()
+                #text_box = Text(frame2, width = 34, height = 1)
+                #text_box.insert("end-1c", filename)
+                #text_box.pack()
                 self._open(filename)
                 #fileOpen = False
 
