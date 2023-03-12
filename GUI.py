@@ -116,20 +116,20 @@ class application:
 
 
     def show_line(self, row):
-            for char in row.decode(self.encoding.get(), errors="replace"):
-                tags = ()
-                if char in "\n\t\v\r\f":
-                    char = "."
-                    tags = ("error",)
+        for char in row.decode(self.encoding.get(), errors="replace"):
+            tags = ()
+            if char in "\n\t\v\r\f":
+                char = "."
+                tags = ("error",)
                 
-                elif 0x20 < ord(char) < 0x7F:
-                    tags = ("ascii",)
-                elif not 0x20 <= ord(char) <= 0xFFFF: 
-                    char = "?"
-                    tags = ("error",)
+            elif 0x20 < ord(char) < 0x7F:
+                tags = ("ascii",)
+            elif not 0x20 <= ord(char) <= 0xFFFF: 
+                char = "?"
+                tags = ("error",)
                 
-                self.viewText.insert("end", char, tags)
-            self.viewText.insert("end", "\n")
+            self.viewText.insert("end", char, tags)
+        self.viewText.insert("end", "\n")
     
 
     #Function that opens the file selected by the user
