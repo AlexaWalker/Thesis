@@ -5,6 +5,7 @@ from tkinter import *
 from PIL import ImageTk, Image
 from tkinter import filedialog
 from functools import partial
+import re 
 
 BLOCK_WIDTH = 22
 BLOCK_HEIGHT = 38
@@ -37,6 +38,8 @@ class application:
         frame3 = self.frame3 = Frame(master=self.parent, width=780, height=500, bg="blue")
         frame4 = self.frame4 = Frame(master=self.parent, width=800, height=220, bg="purple")
 
+        #canvas3 = self.canvas3 = Canvas(master=self.frame3, bg="white", width=780, height=500)
+
         #image sizes for buttons
         pixels_x = 50
         pixels_y = 50
@@ -62,6 +65,12 @@ class application:
         viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
         scrollbar = self.scrollbar = Scrollbar(master=self.frame3)
 
+        self.viewText.tag_configure("ascii", foreground="green")
+        self.viewText.tag_configure("error", foreground="red")
+        self.viewText.tag_configure("hexspace", foreground="navy")
+        self.viewText.tag_configure("graybg", background="lightgray")
+        self.viewText.tag_configure("jpg", background = "purple", foreground = "white")
+
     #Function to add widgets to the display
     def create_layout(self):
         self.parent.geometry("1080x720")
@@ -71,6 +80,7 @@ class application:
         self.frame2.grid(row=0,column=1, rowspan=3, columnspan=2, sticky='NS')
         self.frame3.grid(row=0, column=3, rowspan=2, columnspan=3, sticky='W')
         self.frame4.grid(row=2, column=3, rowspan=1, columnspan=3, sticky='NS')
+
 
         self.frame3.grid_propagate(False)
         self.frame4.grid_propagate(False)
@@ -92,19 +102,36 @@ class application:
 
     #Function sets up text box and displays the file in hex-code and ASCII
     def show_block(self):
+        offset = 4096
         self.viewText.delete("1.0", "end")  #Clears textbox
         if not self.filename:  #Finishes function execution if there is no file to open
             return
         with open(self.filename, "rb") as file:
             file.seek(0, os.SEEK_SET)
-            block = file.read(4096)  #Reads file up to specified number of bytes
+            block = file.read(offset)  #Reads file up to 4kb
 
         rows = [block[i:i + BLOCK_WIDTH] for i in range(0, len(block), BLOCK_WIDTH)] #make rows of BLOCK_WIDTH number of bytes
+        #print(rows)
         for row in rows:
             self.show_bytes(row)
             self.show_line(row)
         self.viewText.insert("end", "\n")
-    
+
+
+        if((self.scrollbar.get()[1]) > 0.9):
+            print("scrollbar at end")
+            with open(self.filename, "rb") as file:
+                file.seek(offset, 1)
+                print(file.tell())
+                block = file.read(offset)  #Reads file up to 4kb
+
+            rows = [block[i:i + BLOCK_WIDTH] for i in range(0, len(block), BLOCK_WIDTH)] #make rows of BLOCK_WIDTH number of bytes
+            for row in rows:
+                self.show_bytes(row)
+                self.show_line(row)
+            self.viewText.insert("end", "\n")
+            #self.viewText.yview_moveto(0.5)
+            
 
     # Function to add bytes to the viewText widget
     def show_bytes(self, row):
@@ -116,18 +143,26 @@ class application:
 
 
     def show_line(self, row):
+
+        file_type = re.search("Exif", row.decode(self.encoding.get(), errors="replace"))
+        if file_type is not None:
+            file_type_location = file_type.span()
+            print(file_type)
+
         for char in row.decode(self.encoding.get(), errors="replace"):
             tags = ()
-            if char in "\n\t\v\r\f":
+
+            if char in "\u2028\u2029\t\n\r\v\f\uFFFD":
                 char = "."
-                tags = ("error",)
-                
+                tags = ("graybg" if char == "\uFFFD" else "error",)
             elif 0x20 < ord(char) < 0x7F:
-                tags = ("ascii",)
-            elif not 0x20 <= ord(char) <= 0xFFFF: 
+                if file_type is not None:
+                    if char in row.decode(self.encoding.get(), errors="replace")[file_type_location[0]:file_type_location[1]]:
+                        tags = ("jpg",)
+                else: tags = ("ascii",)
+            elif not 0x20 <= ord(char) <= 0xFFFF: # Tcl/Tk limit
                 char = "?"
                 tags = ("error",)
-                
             self.viewText.insert("end", char, tags)
         self.viewText.insert("end", "\n")
     
