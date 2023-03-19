@@ -7,6 +7,7 @@ from tkinter import filedialog
 from functools import partial
 import re 
 
+offset = 0
 BLOCK_WIDTH = 22
 BLOCK_HEIGHT = 38
 BLOCK_SIZE = BLOCK_WIDTH * BLOCK_HEIGHT
@@ -71,6 +72,8 @@ class application:
         self.viewText.tag_configure("graybg", background="lightgray")
         self.viewText.tag_configure("jpg", background = "purple", foreground = "white")
 
+        self.viewText.bind_all("<MouseWheel>", self.on_mousewheel)
+
     #Function to add widgets to the display
     def create_layout(self):
         self.parent.geometry("1080x720")
@@ -102,13 +105,13 @@ class application:
 
     #Function sets up text box and displays the file in hex-code and ASCII
     def show_block(self):
-        offset = 4096
-        self.viewText.delete("1.0", "end")  #Clears textbox
+        global offset
+        #self.viewText.delete("1.0", "end")  #Clears textbox
         if not self.filename:  #Finishes function execution if there is no file to open
             return
         with open(self.filename, "rb") as file:
-            file.seek(0, os.SEEK_SET)
-            block = file.read(offset)  #Reads file up to 4kb
+            file.seek(offset, os.SEEK_SET)
+            block = file.read(4096)  #Reads file up to 4kb
 
         rows = [block[i:i + BLOCK_WIDTH] for i in range(0, len(block), BLOCK_WIDTH)] #make rows of BLOCK_WIDTH number of bytes
         #print(rows)
@@ -118,22 +121,14 @@ class application:
         self.viewText.insert("end", "\n")
 
 
-        if((self.scrollbar.get()[1]) > 0.9):
-            print("scrollbar at end")
-            with open(self.filename, "rb") as file:
-                file.seek(offset, 1)
-                print(file.tell())
-                block = file.read(offset)  #Reads file up to 4kb
-
-            rows = [block[i:i + BLOCK_WIDTH] for i in range(0, len(block), BLOCK_WIDTH)] #make rows of BLOCK_WIDTH number of bytes
-            for row in rows:
-                self.show_bytes(row)
-                self.show_line(row)
-            self.viewText.insert("end", "\n")
-            #self.viewText.yview_moveto(0.5)
+    def load(self, mousepos):
+        global offset
+        if(mousepos == 1):
+            offset += 4096
+            self.show_block()
             
 
-    # Function to add bytes to the viewText widget
+    # Function to add Hex bytes to the viewText widget
     def show_bytes(self, row):
         for byte in row:
             self.viewText.insert("end", "{:02X}".format(byte))
@@ -143,7 +138,6 @@ class application:
 
 
     def show_line(self, row):
-
         file_type = re.search("Exif", row.decode(self.encoding.get(), errors="replace"))
         if file_type is not None:
             file_type_location = file_type.span()
@@ -210,6 +204,13 @@ class application:
                 #text_box.pack()
                 self._open(filename)
                 #fileOpen = False
+        
+    def on_mousewheel(self, event):
+        self.viewText.yview_scroll(int(-1*(event.delta/120)), "units")
+        print(self.scrollbar.get())
+
+        if (self.scrollbar.get()[1] == 1.0):
+            self.load(1)
 
 
 app = Tk()

@@ -9,12 +9,12 @@ from functools import partial
 
 data_length = 500
 num_cols = 16
+block_pos = 0
 BLOCK_HEIGHT = 32
 BLOCK_WIDTH = 16
 BLOCK_SIZE = 500
 ISOPEN = False
 FILEOPEN = False
-ENCODINGS = ("ASCII", "UTF-8", "UTF-16", "UTF-32")
 
 class application:
 
@@ -29,7 +29,7 @@ class application:
     def create_variables(self):
         self.filename = None
         self.encoding = StringVar()
-        self.encoding.set(ENCODINGS[0])
+        #self.encoding.set(ENCODINGS[0])
     
     #Function to set up the UI
     def create_widgets(self):
@@ -43,6 +43,7 @@ class application:
 
         #setting up the scrollbar 
         scrollbar = self.scrollbar = Scrollbar(master=frame3, orient=VERTICAL, command=canvas3.yview)
+        self.canvas3.bind_all("<MouseWheel>", self.on_mousewheel)
 
         #image sizes for buttons
         pixels_x = 50
@@ -62,11 +63,6 @@ class application:
         button1 = self.button1 = Button(frame1, image = file_type_btn, command = partial(self.file_type_button, menu),
         borderwidth = 0)
         button2 = self.button2 = Button(frame1, image = file_btn, command = partial(self.file_button, frame2), borderwidth = 0)
-
-
-    #Function to create the textbox for the hex/ascii views
-    #def create_view(self):
-        #viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
 
 
     #Function to add widgets to the display
@@ -120,30 +116,28 @@ class application:
             #self.offsetSpinbox.config(to=max(size, 0))
             self.filename = filename
             #self.show_block()
-            self.show_data()
+            self.show_data(-1)
+    
     
     def show_data(self):
-        print("does this even work?")
-        #binary_data = self.binary_data = []
-        #ascii = 'I feel your presence amongst us You cannot hide in the darkness Can you hear the rumble? Can you hear the rumble that\'s calling? I know your soul is not tainted Even though you\'ve been told so Can you hear the rumble? Can you hear the rumble that\'s calling? I can feel the thunder that\'s breaking in your heart I can see through the scars inside you I can feel the thunder that\'s breaking in your heart I can see through the scars inside you A candle casting a faint glow You and I see eye to eye Can you hear the thunder? How can you hear the thunder that\'s breaking? Now there is nothing between us From now our merge is eternal Can\'t you see that you\'re lost? Can\'t you see that you\'re lost without me? I can feel the thunder that\'s breaking in your heart I can see through the scars inside you I can feel the thunder that\'s breaking in your heart I can see through the scars inside you Can\'t you see that you\'re lost without me? I can feel the thunder that\'s breaking in your heart I can see through the scars inside you I can feel the thunder that\'s breaking in your heart I can see through the scars inside you I can feel the thunder that\'s breaking in your heart I can see through the scars inside you I can feel the thunder that\'s breaking in your heart I can see through the scars inside you'
+        global block_pos
+        global data_length
+        data_length = 1000
+
         with open(self.filename, "rb") as file:
-            file.seek(0, os.SEEK_SET)
-            binary_data = file.read()
+            file.seek(block_pos, os.SEEK_SET)
+            binary_data = file.read(BLOCK_SIZE)
 
-        #binary_data = []
-        #for i in range(BLOCK_SIZE):
-            #binary_data.append(ord(ascii[i]))
-        print(type(binary_data))
         self.bin_data_list = bin_data_list = list(binary_data)   
-
         hex_labels = []
+
+        print(self.scrollbar.get())
         for row in range(BLOCK_SIZE // BLOCK_WIDTH):
         # hex output
             for col in range(BLOCK_WIDTH):
-                label = Label(self.grid, text=f'{binary_data[row * num_cols + col]:02x}', bg='white')
+                label = Label(self.grid, text=f'{binary_data[row * num_cols + col]:02X}', bg='white')
                 label.grid(row=row, column=col)
                 hex_labels.append(label)
-
             # ascii output
             for col in range(BLOCK_WIDTH):
                 byte = bin_data_list[row * BLOCK_WIDTH + col]
@@ -152,34 +146,24 @@ class application:
                 label.grid(row=row, column=BLOCK_WIDTH + col + 1)
         
         self.grid.update_idletasks()
-
         grid_width = sum([hex_labels[i].winfo_width() for i in range(0, BLOCK_WIDTH)])
         row_height = hex_labels[0].winfo_height()
         col_width = hex_labels[0].winfo_width()
         self.canvas3.config(width=col_width * 32 + self.scrollbar.winfo_width(), height=row_height * 16)
-
         self.canvas3.config(scrollregion=self.canvas3.bbox("all"))
-            
+        #block_pos += BLOCK_SIZE
 
-    def show_bytes(self, row, col):
-        for byte in row:
-            self.viewText.insert("end", "{:02X}".format(byte))
-            self.viewText.insert("end", " ")
+    def load(self, mousepos):
+        global block_pos
 
-    def show_line(self, row, col):
-            for char in row.decode(self.encoding.get(), errors="replace"):
-                tags = ()
-                if char in "\n\t\v\r\f":
-                    char = "."
-                    tags = ("error",)
-                
-                elif 0x20 < ord(char) < 0x7F:
-                    tags = ("ascii",)
-                elif not 0x20 <= ord(char) <= 0xFFFF: 
-                    char = "?"
-                    tags = ("error",)
-                
+        if(mousepos == 1.0):
+            block_pos += BLOCK_SIZE
+            self.show_data()
+        elif(mousepos == 0.0):
+            block_pos -= BLOCK_SIZE
+            self.show_data()
 
+                  
     
     #Function that makes the file type selector work
     def file_type_button(self, menu):
@@ -212,9 +196,13 @@ class application:
                 self._open(filename)
                 #fileOpen = False
 
-def on_mousewheel(self, event):
-    self.canvas3.yview_scroll(event.delta, "units")
-    self.canvas3.bind_all("<MouseWheel>", on_mousewheel)
+    def on_mousewheel(self, event):
+        self.canvas3.yview_scroll(int(-1*(event.delta/120)), "units")
+        print(self.scrollbar.get())
+        if (self.scrollbar.get()[1] == 1.0):
+            self.load(1.0)
+        elif(self.scrollbar.get()[1] == 0.0):
+            self.load(0.0)
 
 
 app = Tk()
