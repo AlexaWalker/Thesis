@@ -39,9 +39,13 @@ class application:
         frame3 = self.frame3 = Frame(master=self.parent, width=780, height=500, bg="blue")
         frame4 = self.frame4 = Frame(master=self.parent, width=800, height=220, bg="#CCCCCC")
 
+        searchFrame = self.searchFrame = Frame(master=self.frame4, width=500, height=29)
+
         #canvas3 = self.canvas3 = Canvas(master=self.frame3, bg="white", width=780, height=500)
 
         viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
+        searchLabel = self.searchLabel = Label(self.frame4, anchor="w", padx=5, pady=5, text="Search")
+        searchBox = self.searchBox = Text(master=self.searchFrame, font=("Helvetica", 16))
         scrollbar = self.scrollbar = Scrollbar(master=self.frame3)
 
         #image sizes for buttons
@@ -57,11 +61,13 @@ class application:
 
         file_type_btn = self.file_type_btn = ImageTk.PhotoImage(Image.open('assets/file.png').resize((pixels_x, pixels_y)))
         file_btn = self.file_btn = ImageTk.PhotoImage(Image.open('assets/harddrive.png').resize((pixels_x, pixels_y)))
+        search_btn = self.search_btn = ImageTk.PhotoImage(Image.open('assets/search_icon.png').resize((27, 27)))
 
 
         button1 = self.button1 = Button(frame1, image = file_type_btn, command = partial(self.file_type_button, menu),
         borderwidth = 0)
         button2 = self.button2 = Button(frame1, image = file_btn, command = partial(self.file_button, frame2), borderwidth = 0)
+        button_search = self.button_search = Button(searchFrame, image = search_btn, command = partial(self.find),borderwidth=0)
 
 
     #Function to create the textbox for the hex/ascii views
@@ -85,9 +91,14 @@ class application:
         self.frame3.grid(row=0, column=3, rowspan=2, columnspan=3, sticky='W')
         self.frame4.grid(row=2, column=3, rowspan=1, columnspan=3, sticky='NS')
 
+        self.searchLabel.grid(row=0, column=0, sticky='NW') #frame4
+        self.searchFrame.grid(row=0, column=1, sticky='NW') #frame4
+        self.searchBox.grid(row=0, column=0) #searchframe
+        self.button_search.place(x=471, y=0) #searchframe
 
         self.frame3.grid_propagate(False)
         self.frame4.grid_propagate(False)
+        self.searchFrame.grid_propagate(False)
 
         self.viewText.grid(row=0, column=0, sticky='NSEW')
         self.viewText.grid_propagate(True)
@@ -111,6 +122,7 @@ class application:
         if not self.filename:  #Finishes function execution if there is no file to open
             return
         with open(self.filename, "rb") as file:
+            print(self.filename)
             file.seek(offset, os.SEEK_SET)
             block = file.read(4096)  #Reads file up to 4kb
 
@@ -171,7 +183,7 @@ class application:
             offset = 0
             self.viewText.delete("1.0", "end")
             if filename and os.path.exists(filename):
-                print("path exists")
+                print(filename, "path exists")
                 self.parent.title("{} — {}".format(filename, "Gremlin"))
                 size = os.path.getsize(filename)
                 size = (size - BLOCK_SIZE if size > BLOCK_SIZE else
@@ -179,6 +191,29 @@ class application:
                 #self.offsetSpinbox.config(to=max(size, 0))
                 self.filename = filename
                 self.show_block()
+                print("show block")
+        
+    def open_folder(self, foldername):
+        for filename in os.listdir(foldername):
+            file_path = os.path.join(foldername, filename)
+            self._open(file_path)
+            print("opened file")
+    
+    def find(self):
+        self.viewText.tag_remove('found', '1.0', END)
+        ser = self.viewText.get("1.0","end-1c")
+        if ser:
+            idx = '1.0'
+            while 1:
+                idx = self.viewText.search(ser, idx, nocase=1,
+                                stopindex=END)
+                if not idx: break
+                lastidx = '%s+%dc' % (idx, len(ser))
+                
+                self.viewText.tag_add('found', idx, lastidx)
+                idx = lastidx
+            self.viewText.tag_config('found', foreground='blue')
+        self.viewText.focus_set()
     
     
     #Function that makes the file type selector work
@@ -196,25 +231,21 @@ class application:
     def file_button(self, frame2):
         if (ISOPEN==False):
             if (FILEOPEN == False):
-                filename = filedialog.askopenfilename()
-                #text_box = Text(frame2, width = 34, height = 1)
-                #text_box.insert("end-1c", filename)
-                #text_box.pack()
-                self._open(filename)
+                #filename = filedialog.askopenfilename()
+                foldername = filedialog.askdirectory() 
+                #self._open(filename)
+                self.open_folder(foldername)
                 fileOpen = True
 
             elif (FILEOPEN == True):
-                #text_box.pack_forget()
-                filename = filedialog.askopenfilename()
-                #text_box = Text(frame2, width = 34, height = 1)
-                #text_box.insert("end-1c", filename)
-                #text_box.pack()
-                self._open(filename)
+                #filename = filedialog.askopenfilename()
+                foldername = filedialog.askdirectory() 
+                #self._open(filename)
+                self.open_folder(foldername)
                 #fileOpen = False
         
     def on_mousewheel(self, event):
         self.viewText.yview_scroll(int(-1*(event.delta/120)), "units")
-        print(self.scrollbar.get())
 
         if (self.scrollbar.get()[1] == 1.0):
             self.load(1)
