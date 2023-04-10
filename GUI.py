@@ -39,13 +39,13 @@ class application:
         frame3 = self.frame3 = Frame(master=self.parent, width=780, height=500, bg="blue")
         frame4 = self.frame4 = Frame(master=self.parent, width=800, height=220, bg="#CCCCCC")
 
-        searchFrame = self.searchFrame = Frame(master=self.frame4, width=500, height=29)
+        searchFrame = self.searchFrame = Frame(master=self.frame4, width=275, height=29)
 
         #canvas3 = self.canvas3 = Canvas(master=self.frame3, bg="white", width=780, height=500)
 
         viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
         searchLabel = self.searchLabel = Label(self.frame4, anchor="w", padx=5, pady=5, text="Search")
-        searchBox = self.searchBox = Text(master=self.searchFrame, font=("Helvetica", 16))
+        searchBox = self.searchBox = Entry(master=self.searchFrame, font=("Helvetica", 16))
         scrollbar = self.scrollbar = Scrollbar(master=self.frame3)
 
         #image sizes for buttons
@@ -72,11 +72,11 @@ class application:
 
     #Function to create the textbox for the hex/ascii views
     def create_view(self):
-        self.viewText.tag_configure("ascii", foreground="green")
+        #self.viewText.tag_configure("ascii", foreground="green")
         self.viewText.tag_configure("error", foreground="red")
         self.viewText.tag_configure("hexspace", foreground="navy")
         self.viewText.tag_configure("graybg", background="lightgray")
-        self.viewText.tag_configure("jpg", background = "purple", foreground = "white")
+        self.viewText.tag_configure("search", background = "purple", foreground = "white")
         self.viewText.tag_configure("null", background = "black", foreground="white")
 
         self.viewText.bind_all("<MouseWheel>", self.on_mousewheel)
@@ -94,7 +94,7 @@ class application:
         self.searchLabel.grid(row=0, column=0, sticky='NW') #frame4
         self.searchFrame.grid(row=0, column=1, sticky='NW') #frame4
         self.searchBox.grid(row=0, column=0) #searchframe
-        self.button_search.place(x=471, y=0) #searchframe
+        self.button_search.place(x=245, y=0) #searchframe
 
         self.frame3.grid_propagate(False)
         self.frame4.grid_propagate(False)
@@ -151,7 +151,8 @@ class application:
 
 
     def show_line(self, row):
-        file_type = re.search("Exif", row.decode(self.encoding.get(), errors="replace"))
+        search_text = self.find()
+        file_type = re.search(search_text, row.decode(self.encoding.get(), errors="replace"))
         if file_type is not None:
             file_type_location = file_type.span()
             print(file_type)
@@ -165,7 +166,7 @@ class application:
             elif 0x20 < ord(char) < 0x7F:
                 if file_type is not None:
                     if char in row.decode(self.encoding.get(), errors="replace")[file_type_location[0]:file_type_location[1]]:
-                        tags = ("jpg",)
+                        tags = ("search",)
                 else: tags = ("ascii",)
             elif ord(char) == 0x00:
                 char = "-"
@@ -201,7 +202,7 @@ class application:
     
     def find(self):
         self.viewText.tag_remove('found', '1.0', END)
-        ser = self.viewText.get("1.0","end-1c")
+        ser = self.searchBox.get()
         if ser:
             idx = '1.0'
             while 1:
@@ -214,6 +215,9 @@ class application:
                 idx = lastidx
             self.viewText.tag_config('found', foreground='blue')
         self.viewText.focus_set()
+
+        return self.searchBox.get()
+    
     
     
     #Function that makes the file type selector work
