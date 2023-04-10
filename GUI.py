@@ -7,7 +7,7 @@ from tkinter import filedialog
 from functools import partial
 import re 
 
-offset = 0
+offset = 0 
 BLOCK_WIDTH = 22
 BLOCK_HEIGHT = 38
 BLOCK_SIZE = BLOCK_WIDTH * BLOCK_HEIGHT
@@ -34,12 +34,15 @@ class application:
     def create_widgets(self):
 
         #basic sections of the UI, colours are just like that for now for me to see them easily
-        frame1 = self.frame1 = Frame(master=self.parent, width=50, height=720, bg="red")
-        frame2 = self.frame2 = Frame(master=self.parent, width=250, height=720, bg="yellow")
+        frame1 = self.frame1 = Frame(master=self.parent, width=50, height=720, bg="#D9D9D9")
+        frame2 = self.frame2 = Frame(master=self.parent, width=250, height=720, bg="#CCCCCC")
         frame3 = self.frame3 = Frame(master=self.parent, width=780, height=500, bg="blue")
-        frame4 = self.frame4 = Frame(master=self.parent, width=800, height=220, bg="purple")
+        frame4 = self.frame4 = Frame(master=self.parent, width=800, height=220, bg="#CCCCCC")
 
         #canvas3 = self.canvas3 = Canvas(master=self.frame3, bg="white", width=780, height=500)
+
+        viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
+        scrollbar = self.scrollbar = Scrollbar(master=self.frame3)
 
         #image sizes for buttons
         pixels_x = 50
@@ -63,14 +66,12 @@ class application:
 
     #Function to create the textbox for the hex/ascii views
     def create_view(self):
-        viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
-        scrollbar = self.scrollbar = Scrollbar(master=self.frame3)
-
         self.viewText.tag_configure("ascii", foreground="green")
         self.viewText.tag_configure("error", foreground="red")
         self.viewText.tag_configure("hexspace", foreground="navy")
         self.viewText.tag_configure("graybg", background="lightgray")
         self.viewText.tag_configure("jpg", background = "purple", foreground = "white")
+        self.viewText.tag_configure("null", background = "black", foreground="white")
 
         self.viewText.bind_all("<MouseWheel>", self.on_mousewheel)
 
@@ -154,6 +155,9 @@ class application:
                     if char in row.decode(self.encoding.get(), errors="replace")[file_type_location[0]:file_type_location[1]]:
                         tags = ("jpg",)
                 else: tags = ("ascii",)
+            elif ord(char) == 0x00:
+                char = "-"
+                tags = ("null",)
             elif not 0x20 <= ord(char) <= 0xFFFF: # Tcl/Tk limit
                 char = "?"
                 tags = ("error",)
@@ -163,6 +167,9 @@ class application:
 
     #Function that opens the file selected by the user
     def _open(self, filename):
+            global offset
+            offset = 0
+            self.viewText.delete("1.0", "end")
             if filename and os.path.exists(filename):
                 print("path exists")
                 self.parent.title("{} — {}".format(filename, "Gremlin"))
