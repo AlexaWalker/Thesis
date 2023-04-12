@@ -2,10 +2,12 @@ import os
 import sys
 import binascii
 from tkinter import *
+from tkinter import ttk 
 from PIL import ImageTk, Image
 from tkinter import filedialog
 from functools import partial
-import re 
+import re
+import dropdown_menu as dropdown
 
 offset = 0 
 BLOCK_WIDTH = 22
@@ -29,24 +31,31 @@ class application:
         self.filename = None
         self.encoding = StringVar()
         self.encoding.set(ENCODINGS[0])
+        self.file_types = ['png', 'jpg', 'gif']
     
     #Function to set up the UI
     def create_widgets(self):
-
-        #basic sections of the UI, colours are just like that for now for me to see them easily
+        isopen = self.isopen = 0
+        #basic sections of the UI
         frame1 = self.frame1 = Frame(master=self.parent, width=50, height=720, bg="#D9D9D9")
         frame2 = self.frame2 = Frame(master=self.parent, width=250, height=720, bg="#CCCCCC")
         frame3 = self.frame3 = Frame(master=self.parent, width=780, height=500, bg="blue")
         frame4 = self.frame4 = Frame(master=self.parent, width=800, height=220, bg="#CCCCCC")
 
+        #file selection menu
+        file_type_menu = self.file_type_menu = dropdown.AccordionFrame(parent=self.frame2, text='Image Files\t\t\t         ', relief="raised", borderwidth=1)
+
+        #create checkboxes
+        for i in range(0, len(self.file_types)):
+            self.file_types[i] = Checkbutton(self.file_type_menu.sub_frame, text=self.file_types[i])
+
+        #searchbar 
         searchFrame = self.searchFrame = Frame(master=self.frame4, width=275, height=29)
-
-        #canvas3 = self.canvas3 = Canvas(master=self.frame3, bg="white", width=780, height=500)
-
-        viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
         searchLabel = self.searchLabel = Label(self.frame4, anchor="w", padx=5, pady=5, text="Search")
         searchBox = self.searchBox = Entry(master=self.searchFrame, font=("Helvetica", 16))
         scrollbar = self.scrollbar = Scrollbar(master=self.frame3)
+
+        viewText = self.viewText = Text(master=self.frame3)#width=700)#,  height=500)
 
         #image sizes for buttons
         pixels_x = 50
@@ -58,16 +67,30 @@ class application:
         inner_menu = self.inner_menu = OptionMenu(menu, variable, "one1", "two2", "three3")
         menu.config(width=35)
 
-
+        #setup for buttons
         file_type_btn = self.file_type_btn = ImageTk.PhotoImage(Image.open('assets/file.png').resize((pixels_x, pixels_y)))
         file_btn = self.file_btn = ImageTk.PhotoImage(Image.open('assets/harddrive.png').resize((pixels_x, pixels_y)))
         search_btn = self.search_btn = ImageTk.PhotoImage(Image.open('assets/search_icon.png').resize((27, 27)))
 
-
-        button1 = self.button1 = Button(frame1, image = file_type_btn, command = partial(self.file_type_button, menu),
+        type_selector = self.button1 = Button(frame1, image = file_type_btn, command = partial(self.show_menu),
         borderwidth = 0)
         button2 = self.button2 = Button(frame1, image = file_btn, command = partial(self.file_button, frame2), borderwidth = 0)
         button_search = self.button_search = Button(searchFrame, image = search_btn, command = partial(self.find),borderwidth=0)
+
+    def show_menu(self):
+        var1 = IntVar()
+        if self.isopen == 1:
+            for i in range(0, len(self.file_types)):
+                self.file_types[i].pack_forget()
+            self.file_type_menu.pack_forget()
+            self.isopen = 0
+            return
+        else:
+            self.file_type_menu.pack(side="top", fill="x", expand=1, anchor='n')
+            for i in range(0, len(self.file_types)):
+                self.file_types[i].pack()
+            self.isopen = 1
+            return
 
 
     #Function to create the textbox for the hex/ascii views
@@ -91,11 +114,15 @@ class application:
         self.frame3.grid(row=0, column=3, rowspan=2, columnspan=3, sticky='W')
         self.frame4.grid(row=2, column=3, rowspan=1, columnspan=3, sticky='NS')
 
+        #self.file_type_menu.grid_columnconfigure(0, weight=1)
+        #self.file_type_menu.pack(side="top", fill="x", expand=1, anchor='n')
+
         self.searchLabel.grid(row=0, column=0, sticky='NW') #frame4
         self.searchFrame.grid(row=0, column=1, sticky='NW') #frame4
         self.searchBox.grid(row=0, column=0) #searchframe
         self.button_search.place(x=245, y=0) #searchframe
 
+        self.frame2.grid_propagate(False)
         self.frame3.grid_propagate(False)
         self.frame4.grid_propagate(False)
         self.searchFrame.grid_propagate(False)
