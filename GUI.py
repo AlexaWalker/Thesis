@@ -119,7 +119,7 @@ class application:
     def show_block(self):
         global offset
         #self.viewText.delete("1.0", "end")  #Clears textbox
-        if not self.filename:  #Finishes function execution if there is no file to open
+        if not self.filename: 
             return
         with open(self.filename, "rb") as file:
             print(self.filename)
@@ -151,7 +151,7 @@ class application:
 
 
     def show_line(self, row):
-        search_text = self.find()
+        search_text = self.searchBox.get()
         file_type = re.search(search_text, row.decode(self.encoding.get(), errors="replace"))
         if file_type is not None:
             file_type_location = file_type.span()
@@ -171,7 +171,7 @@ class application:
             elif ord(char) == 0x00:
                 char = "-"
                 tags = ("null",)
-            elif not 0x20 <= ord(char) <= 0xFFFF: # Tcl/Tk limit
+            elif not 0x20 <= ord(char) <= 0xFFFF: 
                 char = "?"
                 tags = ("error",)
             self.viewText.insert("end", char, tags)
@@ -206,14 +206,14 @@ class application:
         if ser:
             idx = '1.0'
             while 1:
-                idx = self.viewText.search(ser, idx, nocase=1,
+                idx = self.viewText.search(ser, idx, nocase=0,
                                 stopindex=END)
                 if not idx: break
                 lastidx = '%s+%dc' % (idx, len(ser))
                 
-                self.viewText.tag_add('found', idx, lastidx)
+                self.viewText.tag_add('search', idx, lastidx)
                 idx = lastidx
-            self.viewText.tag_config('found', foreground='blue')
+            #self.viewText.tag_config('found', foreground='blue')
         self.viewText.focus_set()
 
         return self.searchBox.get()
