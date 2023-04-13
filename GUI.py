@@ -47,7 +47,8 @@ class application:
 
         #create checkboxes
         for i in range(0, len(self.file_types)):
-            self.file_types[i] = Checkbutton(self.file_type_menu.sub_frame, text=self.file_types[i])
+            self.file_types[i] = ttk.Checkbutton(self.file_type_menu.sub_frame, text=self.file_types[i])
+            self.file_types[i].state(['!alternate'])
 
         #searchbar 
         searchFrame = self.searchFrame = Frame(master=self.frame4, width=275, height=29)
@@ -75,10 +76,9 @@ class application:
         type_selector = self.button1 = Button(frame1, image = file_type_btn, command = partial(self.show_menu),
         borderwidth = 0)
         button2 = self.button2 = Button(frame1, image = file_btn, command = partial(self.file_button, frame2), borderwidth = 0)
-        button_search = self.button_search = Button(searchFrame, image = search_btn, command = partial(self.find),borderwidth=0)
+        button_search = self.button_search = Button(searchFrame, image = search_btn, command = partial(self.manual_find),borderwidth=0)
 
     def show_menu(self):
-        var1 = IntVar()
         if self.isopen == 1:
             for i in range(0, len(self.file_types)):
                 self.file_types[i].pack_forget()
@@ -143,13 +143,13 @@ class application:
 
 
     #Function sets up text box and displays the file in hex-code and ASCII
-    def show_block(self):
+    def show_block(self, filename):
         global offset
         #self.viewText.delete("1.0", "end")  #Clears textbox
-        if not self.filename: 
+        if not filename: 
             return
-        with open(self.filename, "rb") as file:
-            print(self.filename)
+        with open(filename, "rb") as file:
+            print(filename)
             file.seek(offset, os.SEEK_SET)
             block = file.read(4096)  #Reads file up to 4kb
 
@@ -160,12 +160,18 @@ class application:
             self.show_line(row)
         self.viewText.insert("end", "\n")
 
+        if(offset > os.path.getsize(filename)):
+            if(self.cur_index < len(self.filenames)):
+                self.cur_index += 1
+                self.file_path = os.path.join(self.foldername, self.filenames[self.cur_index])
+                self._open(self.file_path)
+
 
     def load(self, mousepos):
         global offset
         if(mousepos == 1):
             offset += 4096
-            self.show_block()
+            self.show_block(self.file_path)
             
 
     # Function to add Hex bytes to the viewText widget
@@ -182,11 +188,11 @@ class application:
         file_type = re.search(search_text, row.decode(self.encoding.get(), errors="replace"))
         if file_type is not None:
             file_type_location = file_type.span()
-            print(file_type)
 
         for char in row.decode(self.encoding.get(), errors="replace"):
             tags = ()
 
+            #self.check_find()
             if char in "\u2028\u2029\t\n\r\v\f\uFFFD":
                 char = "."
                 tags = ("graybg" if char == "\uFFFD" else "error",)
@@ -209,25 +215,37 @@ class application:
     def _open(self, filename):
             global offset
             offset = 0
-            self.viewText.delete("1.0", "end")
+            #self.viewText.delete("1.0", "end")
             if filename and os.path.exists(filename):
-                print(filename, "path exists")
-                self.parent.title("{} — {}".format(filename, "Gremlin"))
                 size = os.path.getsize(filename)
                 size = (size - BLOCK_SIZE if size > BLOCK_SIZE else
                         size - BLOCK_WIDTH)
                 #self.offsetSpinbox.config(to=max(size, 0))
                 self.filename = filename
-                self.show_block()
+                self.show_block(filename)
                 print("show block")
-        
+    
+    
     def open_folder(self, foldername):
+        self.viewText.delete("1.0", "end")
+        self.foldername = foldername
+        self.filenames = os.listdir(foldername)
+        self.cur_index = 0
+        self.file_path = os.path.join(foldername, self.filenames[self.cur_index])
+        self._open(self.file_path)
+
+        if foldername and os.path.exists(foldername):
+                print(foldername, "path exists")
+                self.parent.title("{} — {}".format(foldername, "Gremlin"))
+        '''
         for filename in os.listdir(foldername):
             file_path = os.path.join(foldername, filename)
             self._open(file_path)
             print("opened file")
+        '''
     
-    def find(self):
+    #for searches using the search bar
+    def manual_find(self):
         self.viewText.tag_remove('found', '1.0', END)
         ser = self.searchBox.get()
         if ser:
@@ -245,6 +263,43 @@ class application:
 
         return self.searchBox.get()
     
+    '''
+    #for searches using the checkbox options
+    def check_find(self):
+        ascii_dict = {"png": "PNG", "jpg": "Exif", "gif": "GIF"}
+        hex_dict = {"png": "50 4E 47", "jpg": "45 78 69 66", "gif": "47 49 46"}
+        for i in range(0, len(self.file_types)):
+            print(self.file_types[i].state())
+            if(self.file_types[i].instate(['focus', 'selected']) or self.file_types[i].instate(['selected',])):
+                ascii_ser = ascii_dict[self.file_types[i].cget("text")]
+                hex_ser = hex_dict[self.file_types[i].cget("text")]
+                if ascii_ser:
+                    idx = '1.0'
+                    while 1:
+                        idx = self.viewText.search(ascii_ser, idx, nocase=0,
+                                        stopindex=END)
+                        if not idx: break
+                        lastidx = '%s+%dc' % (idx, len(ascii_ser))
+
+                        self.viewText.tag_add('search', idx, lastidx)
+                        idx = lastidx
+                    #self.viewText.tag_config('found', foreground='blue')
+                #self.viewText.focus_set()
+                if hex_ser:
+                    idx = '1.0'
+                    while 1:
+                        idx = self.viewText.search(hex_ser, idx, nocase=0,
+                                        stopindex=END)
+                        if not idx: break
+                        lastidx = '%s+%dc' % (idx, len(hex_ser))
+
+                        self.viewText.tag_add('search', idx, lastidx)
+                        idx = lastidx
+                    #self.viewText.tag_config('found', foreground='blue')
+                self.viewText.focus_set()
+        '''
+
+        
     
     
     #Function that makes the file type selector work
