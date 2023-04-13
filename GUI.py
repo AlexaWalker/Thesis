@@ -37,10 +37,10 @@ class application:
     def create_widgets(self):
         isopen = self.isopen = 0
         #basic sections of the UI
-        frame1 = self.frame1 = Frame(master=self.parent, width=50, height=720, bg="#D9D9D9")
-        frame2 = self.frame2 = Frame(master=self.parent, width=250, height=720, bg="#CCCCCC")
+        frame1 = self.frame1 = Frame(master=self.parent, width=50, height=680, bg="#D9D9D9")
+        frame2 = self.frame2 = Frame(master=self.parent, width=250, height=680, bg="#CCCCCC")
         frame3 = self.frame3 = Frame(master=self.parent, width=780, height=500, bg="blue")
-        frame4 = self.frame4 = Frame(master=self.parent, width=800, height=220, bg="#CCCCCC")
+        frame4 = self.frame4 = Frame(master=self.parent, width=800, height=180, bg="#CCCCCC")
 
         #file selection menu
         file_type_menu = self.file_type_menu = dropdown.AccordionFrame(parent=self.frame2, text='Image Files\t\t\t         ', relief="raised", borderwidth=1)
@@ -106,7 +106,7 @@ class application:
 
     #Function to add widgets to the display
     def create_layout(self):
-        self.parent.geometry("1080x720")
+        self.parent.geometry("1080x680")
         self.parent.resizable(0, 0)
 
         self.frame1.grid(row=0, column=0, rowspan=3, columnspan=1, sticky='NS')
@@ -248,6 +248,7 @@ class application:
     def manual_find(self):
         self.viewText.tag_remove('found', '1.0', END)
         ser = self.searchBox.get()
+        ser_hex = self.searchBox.get().encode().hex()
         if ser:
             idx = '1.0'
             while 1:
@@ -258,21 +259,33 @@ class application:
                 
                 self.viewText.tag_add('search', idx, lastidx)
                 idx = lastidx
+        self.viewText.focus_set()
+        '''
+        if ser_hex:
+            hex_idx = '1.0'
+            while 1:
+                idx = self.viewText.search(ser_hex, hex_idx, nocase=1,
+                                stopindex=END)
+                if not hex_idx: break
+                hex_lastidx = '%s+%dc' % (hex_idx, len(ser_hex))
+                
+                self.viewText.tag_add('search', hex_idx, hex_lastidx)
+                hex_idx = hex_lastidx
             #self.viewText.tag_config('found', foreground='blue')
         self.viewText.focus_set()
+        '''
 
         return self.searchBox.get()
     
-    '''
     #for searches using the checkbox options
     def check_find(self):
         ascii_dict = {"png": "PNG", "jpg": "Exif", "gif": "GIF"}
-        hex_dict = {"png": "50 4E 47", "jpg": "45 78 69 66", "gif": "47 49 46"}
+        #hex_dict = {"png": "50 4E 47", "jpg": "45 78 69 66", "gif": "47 49 46"}
         for i in range(0, len(self.file_types)):
             print(self.file_types[i].state())
             if(self.file_types[i].instate(['focus', 'selected']) or self.file_types[i].instate(['selected',])):
                 ascii_ser = ascii_dict[self.file_types[i].cget("text")]
-                hex_ser = hex_dict[self.file_types[i].cget("text")]
+                #hex_ser = hex_dict[self.file_types[i].cget("text")]
                 if ascii_ser:
                     idx = '1.0'
                     while 1:
@@ -284,7 +297,8 @@ class application:
                         self.viewText.tag_add('search', idx, lastidx)
                         idx = lastidx
                     #self.viewText.tag_config('found', foreground='blue')
-                #self.viewText.focus_set()
+                self.viewText.focus_set()
+                '''
                 if hex_ser:
                     idx = '1.0'
                     while 1:
@@ -297,7 +311,7 @@ class application:
                         idx = lastidx
                     #self.viewText.tag_config('found', foreground='blue')
                 self.viewText.focus_set()
-        '''
+                '''
 
         
     
